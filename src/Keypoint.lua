@@ -16,12 +16,12 @@ function ValueSequenceKeypoint:__newindex(k)
 	error("You can't write to a ValueSequenceKeypoint after construction")
 end
 
-function ValueSequenceKeypoint.new(a: number, v: any, envelope: any, bezierPoint: Vector2)
+function ValueSequenceKeypoint.new(a: number, v: any, envelope: any | nil)
 	local self = setmetatable({
 		Alpha = a,
 		Value = v,
 		Envelope = envelope or 0,
-		BezierPoint = bezierPoint or Vector2.new(0,0), --default is center of line, basically linear
+		-- Smoothing = smoothing or 0, --default is center of line, basically linear
 	}, ValueSequenceKeypoint)
 	return self
 end
