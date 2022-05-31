@@ -1,0 +1,1 @@
+{"name":"package","className":"ModuleScript","filePaths":["src\\init.lua","default.project.json"],"children":[{"name":"Keypoint","className":"ModuleScript","filePaths":["src\\Keypoint.lua"]},{"name":"ValueSequence.story","className":"ModuleScript","filePaths":["src\\ValueSequence.story.lua"]}]}

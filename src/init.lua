@@ -1,13 +1,25 @@
-local TweenService = game:GetService("TweenService")
+--!nocheck
 
 local packages = script.Parent
-
-local ValueSequence = {}
-ValueSequence.__type = "ValueSequence"
 local ValueSequenceKeypoint = require(script:WaitForChild("Keypoint"))
 local math = require(packages:WaitForChild("math"))
 
-function ValueSequence:__index(k)
+export type ValueSequence = {
+	new: (keypoints: {[number]: ValueSequenceKeypoint}, v: lerpValue) -> ValueSequence,
+	keypoint: (alpha: number, value: any, min: any | nil, max: any | nil) -> ValueSequenceKeypoint,
+	Lerp: (self:ValueSequence, keypoint: (ValueSequenceKeypoint), alpha: number) -> ValueSequence,
+	GetValue: (self:ValueSequence, alpha: number, weight: number | nil) -> lerpValue,
+	Solve: (self:ValueSequence, steps: number, weight: number | nil) -> {[number]: lerpValue},
+	Keypoints: {[number]: ValueSequenceKeypoint},
+	Seed: number
+}
+local ValueSequence = {}
+
+function ValueSequence.keypoint(alpha: number, value: any, min: any | nil, max: any | nil): ValueSequenceKeypoint
+	return ValueSequenceKeypoint.new(alpha, value, min, max)
+end
+
+function ValueSequence:__index(k: any): any | nil
 	if rawget(self, k) then
 		return rawget(self, k)
 	elseif rawget(ValueSequence, k) then
@@ -17,30 +29,21 @@ function ValueSequence:__index(k)
 	end
 end
 
-function ValueSequence:__newindex(k)
+function ValueSequence:__newindex(k: any): nil
 	error("You can't write to a ValueSequence after construction")
 end
 
-function ValueSequence:Clone()
-	local keypoints = {}
-	for i, kp in ipairs(self.Keypoints) do
-		keypoints[i] = kp:Clone()
-	end
-	return ValueSequence.new(keypoints, self.Seed)
-end
-
-function ValueSequence:Lerp(other: ValueSequence, alpha: number)
+function ValueSequence:Lerp(other: ValueSequence, alpha: number): ValueSequence
 	local ts = {}
-	for i, kp in ipairs(self.Keypoints) do
+	for _, kp in ipairs(self.Keypoints) do
 		ts[kp.Alpha] = {}
 		ts[kp.Alpha].Value = {kp.Value, other:GetValue(kp.Alpha)}
 		ts[kp.Alpha].Min = {kp.Min, other:GetValue(kp.Alpha, 0)}
 		ts[kp.Alpha].Max = {kp.Max, other:GetValue(kp.Alpha, 1)}
 	end
 	
-	for i, kp in ipairs(other.Keypoints) do
+	for _, kp in ipairs(other.Keypoints) do
 		ts[kp.Alpha] = ts[kp.Alpha] or {}
-
 		if ts[kp.Alpha].Value then
 			ts[kp.Alpha].Value = {ts[kp.Alpha].Value[1], kp.Value}
 		else
@@ -74,68 +77,52 @@ function ValueSequence:Lerp(other: ValueSequence, alpha: number)
 	return ValueSequence.new(keypoints, math.Algebra.lerp(self.Seed, other.Seed, alpha))
 end
 
-function ValueSequence:GetValue(
-	alpha: number,
-	minMaxAlpha: number | nil
-)
-	-- local easedAlpha
-	easingStyle = easingStyle or Enum.EasingStyle.Linear
-	easingDirection = easingDirection or Enum.EasingDirection.InOut
-	if type(easingStyle) == "string" then
-		easingStyle = Enum.EasingStyle[easingStyle]
-	end
-	if type(easingDirection) == "string" then
-		easingDirection = Enum.EasingDirection[easingDirection]
-	end
-	local easedAlpha = TweenService:GetValue(alpha, easingStyle, easingDirection)
-	-- minMaxAlpha = math.clamp(minMaxAlpha or 0.5, 0, 1)
+-- Returns the value at a specific alpha, as well as at the specified min-max weight
+function ValueSequence:GetValue(alpha: number, minMaxWeight: number | nil): lerpValue
 	-- If we are at 0 or 1, return the first or last value respectively
-	if easedAlpha == 0 then
+	if alpha == 0 then
 		local first = self.Keypoints[#self.Keypoints]
 		return first.Value
 	end
-	if easedAlpha == 1 then
+	if alpha == 1 then
 		local last = self.Keypoints[#self.Keypoints]
 		return last.Value
 	end
-	-- Step through each sequential pair of keypoints and see if alpha
-
-	-- lies between the points' time values.
+	-- Step through each sequential pair of keypoints and see if alpha lies between the points' time values.
 	for i = 1, #self.Keypoints - 1 do
 		local ths = self.Keypoints[i]
 		local nxt = self.Keypoints[i + 1]
-		if easedAlpha >= ths.Alpha and easedAlpha < nxt.Alpha then
+		if alpha >= ths.Alpha and alpha < nxt.Alpha then
 			-- Calculate how far alpha lies between the points
-			local nxtAlpha = (easedAlpha - ths.Alpha) / (nxt.Alpha - ths.Alpha)
-			if minMaxAlpha then
+			local nxtAlpha = (alpha - ths.Alpha) / (nxt.Alpha - ths.Alpha)
+			if minMaxWeight then
 				local min = math.Algebra.lerp(ths.Min, nxt.Min, nxtAlpha)
 				local max = math.Algebra.lerp(ths.Max, nxt.Max, nxtAlpha)
 
-				return math.Algebra.lerp(min, max, minMaxAlpha)
+				return math.Algebra.lerp(min, max, minMaxWeight)
 			else
 				return math.Algebra.lerp(ths.Value, nxt.Value, nxtAlpha)
 			end
 			-- return (next.Value - this.Value) * nxtAlpha + this.Value
 		end
 	end
+	return
 end
 
-function ValueSequence.keypoint(...)
-	return ValueSequenceKeypoint.new(...)
-end
-
-function ValueSequence:Solve(steps: number, minMaxAlpha: number | nil)
-	minMaxAlpha = minMaxAlpha or self.Random:NextNumber()
+-- Returns a list of steps at regular intervals showing the value across alpha
+function ValueSequence:Solve(steps: number, minMaxWeight: number | nil): {[number]: lerpValue}
+	minMaxWeight = minMaxWeight or self.Random:NextNumber()
 	local values = {}
 	for i=1, steps do
 		local alpha = i/steps
-		local value = self:GetValue(alpha, minMaxAlpha)
+		local value = self:GetValue(alpha, minMaxWeight)
 		table.insert(values, value)
 	end
 	return values
 end
 
-function ValueSequence.new(keyPointList: {[number]: ValueSequenceKeypoint}, seed: number | nil)
+
+function ValueSequence.new(keyPointList: {[number]: ValueSequenceKeypoint}, seed: number | nil): ValueSequence
 	seed = seed or tick()
 	local self = setmetatable({
 		Keypoints = keyPointList,
@@ -144,7 +131,5 @@ function ValueSequence.new(keyPointList: {[number]: ValueSequenceKeypoint}, seed
 	}, ValueSequence)
 	return self
 end
-
-export type ValueSequence = typeof(ValueSequence.new({}))
 
 return ValueSequence
