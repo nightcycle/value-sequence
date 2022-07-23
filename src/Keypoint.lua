@@ -1,12 +1,10 @@
 --!nocheck
 
 local packages = script.Parent.Parent
-local math = require(packages:WaitForChild("math"))
-
+local MathUtil = require(packages:WaitForChild("math"))
 local ValueSequenceKeypoint = {}
-ValueSequenceKeypoint.__type = "ValueSequenceKeypoint"
 
-export type lerpValue = number
+export type LerpValue = number
 | string
 | boolean
 | BrickColor
@@ -28,15 +26,22 @@ export type lerpValue = number
 | Vector3
 | CFrame
 
-export type ValueSequenceKeypoint = {
-	new: (alpha: number, v: lerpValue) -> ValueSequenceKeypoint,
-	Lerp: (keypoint: (ValueSequenceKeypoint), alpha: number) -> ValueSequenceKeypoint,
-	Alpha: number,
-	Value: lerpValue,
-	Min: lerpValue | nil,
-	Max: lerpValue | nil
-}
--- export type ValueSequenceKeypoint = {alpha: number, value: any, min: any | nil, max: any | nil}
+function ValueSequenceKeypoint.new(a: number, v: any, min: any | nil, max: any | nil): ValueSequenceKeypoint
+	min = min or v
+	max = max or v
+
+	local self = {
+		Alpha = a,
+		Value = v,
+		Min = min,
+		Max = max,
+	}
+	setmetatable(self, ValueSequenceKeypoint)
+
+	return (self :: any) :: ValueSequenceKeypoint
+end
+
+export type ValueSequenceKeypoint = typeof(ValueSequenceKeypoint.new(0,0))
 
 function ValueSequenceKeypoint:__index(k)
 	if rawget(self, k) then
@@ -50,28 +55,18 @@ end
 
 --lerps the keypoint by the alpha between the min and max value
 function ValueSequenceKeypoint:Lerp(vsk: ValueSequenceKeypoint, alpha: number)
-	local a = math.Algebra.lerp(self.Alpha, vsk.Alpha)
-	local v = math.Algebra.lerp(self.Value, vsk.Value)
-	local min = math.Algebra.lerp(self.Min, vsk.Min)
-	local max = math.Algebra.lerp(self.Max, vsk.Max)
-	return ValueSequenceKeypoint.new(a,v,min,max)
+
+	local a = MathUtil.Algebra.lerp(self.Alpha, vsk.Alpha) :: LerpValue
+	local v = MathUtil.Algebra.lerp(self.Value, vsk.Value) :: LerpValue
+
+	local min = MathUtil.Algebra.lerp(self.Min, vsk.Min) :: LerpValue
+	local max = MathUtil.Algebra.lerp(self.Max, vsk.Max) :: LerpValue
+
+	return ValueSequenceKeypoint.new(a,v,min,max) :: LerpValue
 end
 
 function ValueSequenceKeypoint:__newindex(k)
 	error("You can't write to a ValueSequenceKeypoint after construction")
-end
-
-function ValueSequenceKeypoint.new(a: number, v: any, min: any | nil, max: any | nil): ValueSequenceKeypoint
-	min = min or v
-	max = max or v
-
-	local self = setmetatable({
-		Alpha = a,
-		Value = v,
-		Min = min,
-		Max = max,
-	}, ValueSequenceKeypoint)
-	return self
 end
 
 return ValueSequenceKeypoint

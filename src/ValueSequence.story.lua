@@ -1,5 +1,11 @@
 --!nocheck
-return function(coreGui)
+
+type Graph = {
+	Resolution: number,
+	Data: {[number]: number},
+}
+
+return function(coreGui: CoreGui)
 
 	local package = script.Parent
 	local packages = package.Parent
@@ -12,10 +18,11 @@ return function(coreGui)
 
 		local Graph = require(packages:WaitForChild("graph"))
 
-		local frame = Instance.new("Frame", coreGui)
+		local frame: Frame = Instance.new("Frame")
 		frame.AnchorPoint = Vector2.new(0.5,0.5)
 		frame.Position = UDim2.fromScale(0.5,0.5)
 		frame.Size = UDim2.fromScale(0.8,0.8)
+		frame.Parent = coreGui
 		
 		maid:GiveTask(frame)
 
@@ -35,10 +42,11 @@ return function(coreGui)
 			MaxA = SeqA:Solve(steps, 1),
 			MinA = SeqA:Solve(steps, 0),
 		}
-
+	
 		local graph = Graph.new(frame)
 		graph.Resolution = 100
-		graph.Data = Data
+		graph.Data = Data :: {[number]: number}
+
 		maid:GiveTask(graph)
 	end)
 	if not success then

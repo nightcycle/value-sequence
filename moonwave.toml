@@ -1,5 +1,5 @@
-title = "package"  # From Git
-gitRepoUrl = "https://github.com/nightcycle/project" # From Git
+title = "ValueSequence"  # From Git
+gitRepoUrl = "https://github.com/nightcycle/valuesequence" # From Git
 
 gitSourceBranch = "master"
 changelog = true

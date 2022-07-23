@@ -5,17 +5,17 @@ local ValueSequenceKeypoint = require(script:WaitForChild("Keypoint"))
 local math = require(packages:WaitForChild("math"))
 
 export type ValueSequence = {
-	new: (keypoints: {[number]: ValueSequenceKeypoint}, v: lerpValue) -> ValueSequence,
-	keypoint: (alpha: number, value: any, min: any | nil, max: any | nil) -> ValueSequenceKeypoint,
-	Lerp: (self:ValueSequence, keypoint: (ValueSequenceKeypoint), alpha: number) -> ValueSequence,
-	GetValue: (self:ValueSequence, alpha: number, weight: number | nil) -> lerpValue,
-	Solve: (self:ValueSequence, steps: number, weight: number | nil) -> {[number]: lerpValue},
-	Keypoints: {[number]: ValueSequenceKeypoint},
+	new: (keypoints: {[number]: ValueSequenceKeypoint.ValueSequenceKeypoint}, v: any) -> ValueSequence,
+	keypoint: (alpha: number, value: any, min: any | nil, max: any | nil) -> ValueSequenceKeypoint.ValueSequenceKeypoint,
+	Lerp: (self:ValueSequence, keypoint: (ValueSequenceKeypoint.ValueSequenceKeypoint), alpha: number) -> ValueSequence,
+	GetValue: (self:ValueSequence, alpha: number, weight: number | nil) -> any,
+	Solve: (self:ValueSequence, steps: number, weight: number | nil) -> {[number]: any},
+	Keypoints: {[number]: ValueSequenceKeypoint.ValueSequenceKeypoint},
 	Seed: number
 }
 local ValueSequence = {}
 
-function ValueSequence.keypoint(alpha: number, value: any, min: any | nil, max: any | nil): ValueSequenceKeypoint
+function ValueSequence.keypoint(alpha: number, value: any, min: any | nil, max: any | nil): ValueSequenceKeypoint.ValueSequenceKeypoint
 	return ValueSequenceKeypoint.new(alpha, value, min, max)
 end
 
@@ -78,7 +78,7 @@ function ValueSequence:Lerp(other: ValueSequence, alpha: number): ValueSequence
 end
 
 -- Returns the value at a specific alpha, as well as at the specified min-max weight
-function ValueSequence:GetValue(alpha: number, minMaxWeight: number | nil): lerpValue
+function ValueSequence:GetValue(alpha: number, minMaxWeight: number | nil): any
 	-- If we are at 0 or 1, return the first or last value respectively
 	if alpha == 0 then
 		local first = self.Keypoints[#self.Keypoints]
@@ -110,7 +110,7 @@ function ValueSequence:GetValue(alpha: number, minMaxWeight: number | nil): lerp
 end
 
 -- Returns a list of steps at regular intervals showing the value across alpha
-function ValueSequence:Solve(steps: number, minMaxWeight: number | nil): {[number]: lerpValue}
+function ValueSequence:Solve(steps: number, minMaxWeight: number | nil): {[number]: any}
 	minMaxWeight = minMaxWeight or self.Random:NextNumber()
 	local values = {}
 	for i=1, steps do
@@ -121,15 +121,14 @@ function ValueSequence:Solve(steps: number, minMaxWeight: number | nil): {[numbe
 	return values
 end
 
-
-function ValueSequence.new(keyPointList: {[number]: ValueSequenceKeypoint}, seed: number | nil): ValueSequence
+function ValueSequence.new(keyPointList: {[number]: ValueSequenceKeypoint.ValueSequenceKeypoint}, seed: number | nil): ValueSequence
 	seed = seed or tick()
 	local self = setmetatable({
 		Keypoints = keyPointList,
 		Seed = seed,
 		Random = Random.new(seed),
 	}, ValueSequence)
-	return self
+	return (self :: any) :: ValueSequence
 end
 
 return ValueSequence
