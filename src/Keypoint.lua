@@ -1,72 +1,54 @@
---!nocheck
+--!strict
+local _Package = script.Parent
+local _Packages = _Package.Parent
+-- Services
+-- Packages
+local CurveUtil = require(_Packages:WaitForChild("CurveUtil"))
 
-local packages = script.Parent.Parent
-local MathUtil = require(packages:WaitForChild("math"))
-local ValueSequenceKeypoint = {}
+-- Modules
+-- Types
+export type ValueSequenceKeypoint<V> = {
+	__index: ValueSequenceKeypoint<V>,
+	Time: number,
+	Value: V,
+	Min: V,
+	Max: V,
+	new: (t: number, v: V, min: V?, max: V?) -> ValueSequenceKeypoint<V>,
+	Lerp: (self: ValueSequenceKeypoint<V>, other: ValueSequenceKeypoint<V>, alpha: number) -> ValueSequenceKeypoint<V>
+}
 
-export type LerpValue = number
-| string
-| boolean
-| BrickColor
-| ColorSequence
-| ColorSequenceKeypoint
-| DateTime
-| EnumItem
-| NumberRange
-| NumberSequence
-| PathWaypoint
-| PhysicalProperties
-| Ray
-| Rect
-| Region3
-| Region3int16
-| UDim
-| UDim2
-| Color3
-| Vector3
-| CFrame
+-- Constants
+-- Variables
+-- References
+-- Private Functions
+-- Class
 
-function ValueSequenceKeypoint.new(a: number, v: any, min: any | nil, max: any | nil): ValueSequenceKeypoint
+local ValueSequenceKeypoint = {} :: ValueSequenceKeypoint<any>
+ValueSequenceKeypoint.__index = ValueSequenceKeypoint
+
+function ValueSequenceKeypoint.new(t: number, v: any, min: any?, max: any?): ValueSequenceKeypoint<any>
 	min = min or v
 	max = max or v
 
-	local self = {
-		Alpha = a,
-		Value = v,
-		Min = min,
-		Max = max,
-	}
-	setmetatable(self, ValueSequenceKeypoint)
+	local self: ValueSequenceKeypoint<any> = setmetatable({}, ValueSequenceKeypoint) :: any
+	self.Time = t
+	self.Value = v
+	self.Min = min
+	self.Max = max
 
-	return (self :: any) :: ValueSequenceKeypoint
-end
-
-export type ValueSequenceKeypoint = typeof(ValueSequenceKeypoint.new(0,0))
-
-function ValueSequenceKeypoint:__index(k)
-	if rawget(self, k) then
-		return rawget(self, k)
-	elseif rawget(ValueSequenceKeypoint, k) then
-		return rawget(ValueSequenceKeypoint, k)
-	else
-		return nil
-	end
+	return self
 end
 
 --lerps the keypoint by the alpha between the min and max value
-function ValueSequenceKeypoint:Lerp(vsk: ValueSequenceKeypoint, alpha: number)
+function ValueSequenceKeypoint:Lerp(other: ValueSequenceKeypoint<any>, alpha: number): ValueSequenceKeypoint<any>
 
-	local a = MathUtil.Algebra.lerp(self.Alpha, vsk.Alpha) :: LerpValue
-	local v = MathUtil.Algebra.lerp(self.Value, vsk.Value) :: LerpValue
+	local t = CurveUtil.lerp(self.Time, other.Time, alpha)
+	local v = CurveUtil.lerp(self.Value, other.Value, alpha)
 
-	local min = MathUtil.Algebra.lerp(self.Min, vsk.Min) :: LerpValue
-	local max = MathUtil.Algebra.lerp(self.Max, vsk.Max) :: LerpValue
+	local min = CurveUtil.lerp(self.Min, other.Min, alpha)
+	local max = CurveUtil.lerp(self.Max, other.Max, alpha)
 
-	return ValueSequenceKeypoint.new(a,v,min,max) :: LerpValue
-end
-
-function ValueSequenceKeypoint:__newindex(k)
-	error("You can't write to a ValueSequenceKeypoint after construction")
+	return ValueSequenceKeypoint.new(t,v,min,max)
 end
 
 return ValueSequenceKeypoint
