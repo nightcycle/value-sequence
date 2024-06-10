@@ -1,4 +1,5 @@
 --!strict
+--!native
 local _Package = script
 local _Packages = _Package.Parent
 -- Services
